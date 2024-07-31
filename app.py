@@ -64,7 +64,6 @@ def calculate_route():
         'path': ordered_nodes
     })
 
-
 @app.route('/arbol-expansion', methods=['POST'])
 def calculate_mst():
     data = request.json
@@ -88,23 +87,38 @@ def calculate_mst():
 
     mst = nx.minimum_spanning_tree(G, weight='weight')
 
-    mst_edges = []
+    # Calculate total cost of the MST
+    total_cost = sum(weight['weight'] for _, _, weight in mst.edges(data=True))
+
+    # Extract the MST edges and create the path
+    path = []
     for u, v, weight in mst.edges(data=True):
-        mst_edges.append({
+        path.append({
             'start': {
                 'address': u,
-                'latlng': G.nodes[u]['latlng']
+                'latlng': {
+                    'lat': G.nodes[u]['latlng'][0],
+                    'lng': G.nodes[u]['latlng'][1]
+                }
             },
             'end': {
                 'address': v,
-                'latlng': G.nodes[v]['latlng']
+                'latlng': {
+                    'lat': G.nodes[v]['latlng'][0],
+                    'lng': G.nodes[v]['latlng'][1]
+                }
             },
-            'distance': weight['weight']
+            'distance': str(weight['weight'])
         })
 
-    return jsonify({
-        'mst': mst_edges
-    })
+    # Create the response model
+    response_model = {
+        'cost': total_cost,
+        'path': path
+    }
+
+    return jsonify(response_model)
+
 
 if __name__ == '__main__':
     app.run()
